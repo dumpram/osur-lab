@@ -27,6 +27,14 @@ SECTIONS {
 
 		. = ALIGN (4096);
 	}
+    .xvars 0x150000 :
+    {
+        *( .varx* )
+    }
+    .xfuns 0x160000 :
+    {
+        *( .funx* )
+    }
 
 	/*
 	 * what with other sections generated with gcc (various versions)?

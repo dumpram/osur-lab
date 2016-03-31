@@ -7,6 +7,10 @@
 #include <types/io.h>
 #include <kernel/errno.h>
 
+
+/*! test includes */
+#include <kernel/test.h>
+
 /*! kernel stack */
 uint8 system_stack [ STACK_SIZE ];
 
@@ -36,8 +40,9 @@ void k_startup ()
 	stdio_init (); /* initialize standard output devices */
 
 	/* start desired program(s) */
-	hello_world ();
-	debug ();
+    ispisi_x();
+    //hello_world ();
+	//debug ();
 
 	kprintf ( "\nSystem halted!\n" );
 	halt ();
