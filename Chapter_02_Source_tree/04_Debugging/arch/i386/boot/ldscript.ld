@@ -4,6 +4,12 @@
 
 ENTRY(arch_startup)
 
+x_addr = 0x150000;
+f_addr = 0x160000;
+prog_addr = 0x200000;
+exec_addr = 0x300000;
+
+
 SECTIONS {
 	.code LOAD_ADDR :
 	{
@@ -12,18 +18,18 @@ SECTIONS {
 		/* instructions */
 		*?/boot/startup.asm.o ( .text* )
 
-		*( .text* )
+		*( EXCLUDE_FILE (*?/programs/?*/?*.o) .text* )
 	}
 	.data :
 	{
 		kernel_data_addr = .;
 
 		/* read only data (constants), initialized global variables */
-		* ( .rodata* .data* )
+		*( EXCLUDE_FILE (*?/programs/?*/?*.o) .rodata* .data* )
 	}
 	.bss :
 	{
-		*( .bss* COMMON* )
+		*( EXCLUDE_FILE (*?/programs/?*/?*.o) .bss* COMMON* )
 
 		. = ALIGN (4096);
 	}
@@ -34,6 +40,10 @@ SECTIONS {
     .xfuns 0x160000 :
     {
         *( .funx* )
+    }
+    .programs exec_addr : AT(prog_addr)
+    {
+        *?/programs/?*/?*.o ( .text* .rodata* .data* .bss* )
     }
 
 	/*

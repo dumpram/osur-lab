@@ -25,6 +25,8 @@ void k_startup ()
 	extern console_t K_INITIAL_STDOUT, K_STDOUT;
 	extern console_t *k_stdout; /* console for kernel messages */
 
+    
+
 	/* set initial stdout */
 	k_stdout = &K_INITIAL_STDOUT;
 	k_stdout->init (0);
@@ -40,8 +42,8 @@ void k_startup ()
 	stdio_init (); /* initialize standard output devices */
 
 	/* start desired program(s) */
-    ispisi_x();
-    //hello_world ();
+//    ispisi_x();
+    hello_world ();
 	//debug ();
 
 	kprintf ( "\nSystem halted!\n" );
