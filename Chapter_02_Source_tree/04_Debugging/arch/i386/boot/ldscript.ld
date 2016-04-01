@@ -6,8 +6,8 @@ ENTRY(arch_startup)
 
 x_addr = 0x150000;
 f_addr = 0x160000;
-prog_addr = 0x200000;
-exec_addr = 0x300000;
+prog_rom_addr = 0x200000;
+prog_exec_addr = 0x300000;
 
 
 SECTIONS {
@@ -41,10 +41,11 @@ SECTIONS {
     {
         *( .funx* )
     }
-    .programs exec_addr : AT(prog_addr)
+    .programs prog_exec_addr : AT(prog_rom_addr)
     {
         *?/programs/?*/?*.o ( .text* .rodata* .data* .bss* )
     }
+    prog_end_addr = prog_rom_addr + SIZEOF(.programs);
 
 	/*
 	 * what with other sections generated with gcc (various versions)?

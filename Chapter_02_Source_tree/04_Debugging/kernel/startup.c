@@ -24,8 +24,9 @@ void k_startup ()
 {
 	extern console_t K_INITIAL_STDOUT, K_STDOUT;
 	extern console_t *k_stdout; /* console for kernel messages */
+   extern char prog_rom_addr, prog_exec_addr, prog_end_addr;
+   char *src, *dst, *end;
 
-    
 
 	/* set initial stdout */
 	k_stdout = &K_INITIAL_STDOUT;
@@ -41,10 +42,16 @@ void k_startup ()
 
 	stdio_init (); /* initialize standard output devices */
 
+    src = &prog_rom_addr;
+    dst = &prog_exec_addr;
+    end = &prog_end_addr;
+    while(src < end) {
+        *dst++ = *src++;
+    }
 	/* start desired program(s) */
 //    ispisi_x();
     hello_world ();
-	//debug ();
+	debug ();
 
 	kprintf ( "\nSystem halted!\n" );
 	halt ();
