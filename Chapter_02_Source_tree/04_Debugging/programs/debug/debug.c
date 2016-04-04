@@ -5,6 +5,8 @@
 #include <api/errno.h>
 #include <kernel/errno.h>
 
+static int d;
+
 static int inc ( int n )
 {
 	n++;
@@ -31,11 +33,15 @@ int debug ()
 
 	printf ( "a=%d, b=%d, c=%d\n", a, b, c );
 
+
 #if 1	/* compile with 'debug=yes' and without */
 	LOG ( WARN, "This is log entry with WARN relevance" );
 	LOG ( INFO, "Address of 'a' is %x", &a );
+    LOG ( INFO, "(BSS/DATA) Address of 'd' is %x", &d );
+    register int sp asm ("sp");
+    LOG ( INFO, "(SP) Stack pointer: %x", sp);
 
-	ASSERT_ERRNO_AND_RETURN ( TRUE, EINVAL );
+    ASSERT_ERRNO_AND_RETURN ( TRUE, EINVAL );
 
 	ASSERT ( TRUE );
 	//ASSERT ( FALSE );
