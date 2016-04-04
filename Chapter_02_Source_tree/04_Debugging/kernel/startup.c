@@ -23,9 +23,9 @@ char system_info[] = 	OS_NAME ": " NAME_MAJOR ":" NAME_MINOR ", "
 void k_startup ()
 {
 	extern console_t K_INITIAL_STDOUT, K_STDOUT;
-	extern console_t *k_stdout; /* console for kernel messages */
-   extern char prog_rom_addr, prog_exec_addr, prog_end_addr;
-   char *src, *dst, *end;
+    extern console_t *k_stdout; /* console for kernel messages */
+    extern char prog_rom_addr, prog_exec_addr, prog_end_addr;
+    char *src, *dst, *end;
 
 
 	/* set initial stdout */
@@ -40,8 +40,12 @@ void k_startup ()
 
 	kprintf ( "%s\n", system_info );
 
-	stdio_init (); /* initialize standard output devices */
+    /* ispis vrijednosti varijable i adresa testne varijable i funkcije */
+    ispisi_x();
 
+    stdio_init (); /* initialize standard output devices */
+
+    /* priprema programa za izvodjenje */
     src = &prog_rom_addr;
     dst = &prog_exec_addr;
     end = &prog_end_addr;
@@ -49,7 +53,10 @@ void k_startup ()
         *dst++ = *src++;
     }
 	/* start desired program(s) */
-//    ispisi_x();
+
+    kprintf("HELLO_ADDR: %x\n", hello_world);
+    kprintf("DEBUG_ADDR: %x\n", debug);
+
     hello_world ();
 	debug ();
 

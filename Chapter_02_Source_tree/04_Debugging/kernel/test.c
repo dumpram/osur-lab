@@ -1,10 +1,11 @@
-#include <stdio.h>
+#include <kernel/kprint.h>
 #include <kernel/test.h>
 
-static int x __attribute__((section (".varx")));
+static int x __attribute__((section (".varx"))) = 0xA5A5A5A5;
 
 void ispisi_x() {
-	printf("Adresa varijable x: %x\r\n", &x);
-    printf("Vrijednost varijable x: %x\r\n", x);
-    printf("Adresa funkcije ispisi_x: %x\r\n", ispisi_x);
+    kprintf("\n # ISPIS ADRESA # \n");
+	kprintf("Adresa varijable x: %x\n", &x);
+    kprintf("Vrijednost varijable x: %x\n", x);
+    kprintf("Adresa funkcije ispisi_x: %x\n\n", ispisi_x);
 }
