@@ -10,6 +10,8 @@
 #include <kernel/errno.h>
 #include <kernel/features.h>
 
+#define DUMMY_PRIO 2
+
 char system_info[] = 	OS_NAME ": " NAME_MAJOR ":" NAME_MINOR ", "
 			"Version: " VERSION " (" ARCH ")";
 
@@ -37,8 +39,10 @@ void k_startup ()
 	arch_init_interrupts ();
 
 	/* detect memory faults (qemu do not detect segment violations!) */
-	arch_register_interrupt_handler ( INT_MEM_FAULT, k_memory_fault );
-	arch_register_interrupt_handler ( INT_UNDEF_FAULT, k_memory_fault );
+	arch_register_interrupt_handler ( INT_MEM_FAULT, k_memory_fault,
+        DUMMY_PRIO );
+	arch_register_interrupt_handler ( INT_UNDEF_FAULT, k_memory_fault,
+        DUMMY_PRIO );
 
 	/* switch to default 'stdout' for kernel */
 	k_stdout = &K_STDOUT;

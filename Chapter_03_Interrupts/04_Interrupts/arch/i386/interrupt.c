@@ -20,6 +20,12 @@ struct ihndlr
 	int (*ihandler) ( unsigned int );
 
 	list_h list;
+
+    int priority;
+
+    int req_cnt;
+
+    int is_processed;
 };
 
 /*! Initialize interrupt subsystem (in 'arch' layer) */
@@ -47,7 +53,8 @@ void arch_irq_disable ( unsigned int irq )
 }
 
 /*! Register handler function for particular interrupt number */
-void arch_register_interrupt_handler ( unsigned int inum, void *handler )
+void arch_register_interrupt_handler ( unsigned int inum, void *handler,
+     int priority )
 {
 	struct ihndlr *ih;
 
@@ -57,6 +64,10 @@ void arch_register_interrupt_handler ( unsigned int inum, void *handler )
 		ASSERT ( ih );
 
 		ih->ihandler = handler;
+
+        ih->priority = priority;
+
+        ih->is_processed = 0;
 
 		list_append ( &ihandlers[inum], ih, &ih->list );
 	}
@@ -94,6 +105,10 @@ void arch_interrupt_handler ( int irq_num )
 {
 	struct ihndlr *ih;
 
+    int (*max_prio_handler) ( unsigned int );
+
+    int max_prio = 0;
+
 	if(irq_num < INTERRUPTS && (ih = list_get (&ihandlers[irq_num], FIRST)))
 	{
 		/* enable interrupts on PIC immediately since program may not
@@ -101,13 +116,21 @@ void arch_interrupt_handler ( int irq_num )
 		if ( icdev->at_exit )
 			icdev->at_exit ( irq_num );
 
+        while ( ih ) {
+            ih->req_cnt++;
+        }
+
 		/* Call registered handlers */
 		while ( ih )
 		{
-			ih->ihandler ( irq_num );
-
+            if ( ih->priority > max_prio && ih->req_cnt > 0 ) {
+                max_prio_handler = ih->ihandler;
+                max_prio = ih->priority;
+            }
+			//ih->ihandler ( irq_num );
 			ih = list_get_next ( &ih->list );
 		}
+        max_prio_handler( irq_num );
 	}
 
 	else if ( irq_num < INTERRUPTS )

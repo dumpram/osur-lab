@@ -6,6 +6,8 @@
 #include <arch/interrupt.h>
 #include <arch/processor.h>
 
+#define DUMMY_PRIO 2
+
 #define TEST	1
 
 /* detect memory faults (qemu do not detect segment violations!) */
@@ -22,8 +24,8 @@ int segm_fault ()
 #if TEST == 1
 	printf ( "\nInterrupt test >>>\n" );
 
-	arch_register_interrupt_handler ( SOFTWARE_INTERRUPT, test1 );
-	arch_register_interrupt_handler ( SOFTWARE_INTERRUPT, test1 );
+	arch_register_interrupt_handler ( SOFTWARE_INTERRUPT, test1, DUMMY_PRIO );
+	arch_register_interrupt_handler ( SOFTWARE_INTERRUPT, test1, DUMMY_PRIO );
 
 	raise_interrupt ( SOFTWARE_INTERRUPT );
 

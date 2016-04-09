@@ -5,7 +5,7 @@
 void arch_init_interrupts ();
 
 /*! Register handler function for particular interrupt number */
-void arch_register_interrupt_handler ( unsigned int inum, void *handler );
+void arch_register_interrupt_handler ( unsigned int inum, void *handler, int priority );
 
 /*! Unregister handler function for particular interrupt number */
 void arch_unregister_interrupt_handler ( unsigned int irq_num, void *handler );
