@@ -105,7 +105,7 @@ void arch_interrupt_handler ( int irq_num )
 {
 	struct ihndlr *ih;
 
-    int (*max_prio_handler) ( unsigned int );
+    struct ihndlr *max_prio_ih;
 
     int max_prio = 0;
 
@@ -118,19 +118,37 @@ void arch_interrupt_handler ( int irq_num )
 
         while ( ih ) {
             ih->req_cnt++;
+            ih = list_get_next ( &ih->list );
         }
 
-		/* Call registered handlers */
-		while ( ih )
-		{
-            if ( ih->priority > max_prio && ih->req_cnt > 0 ) {
-                max_prio_handler = ih->ihandler;
-                max_prio = ih->priority;
+        max_prio_ih = ih = list_get (&ihandlers[irq_num], FIRST);
+
+		while ( max_prio_ih ) {
+            max_prio_ih = NULL;
+    		while ( ih )
+    		{
+                if ( ih->priority > max_prio && ih->req_cnt != 0 ) {
+                    max_prio_ih = ih;
+                    max_prio = ih->priority;
+                }
+    			//ih->ihandler ( irq_num );
+    			ih = list_get_next ( &ih->list );
+    		}
+            if ( !max_prio_ih ) {
+                break;
             }
-			//ih->ihandler ( irq_num );
-			ih = list_get_next ( &ih->list );
-		}
-        max_prio_handler( irq_num );
+            if ( max_prio_ih->is_processed ) {
+                return;
+            } else {
+                max_prio_ih->is_processed = 1;
+                max_prio_ih->ihandler( irq_num );
+                max_prio_ih->req_cnt--;
+                max_prio_ih->is_processed = 0;
+            }
+            max_prio = 0;
+            max_prio_ih = ih = list_get (&ihandlers[irq_num], FIRST);
+        }
+
 	}
 
 	else if ( irq_num < INTERRUPTS )
