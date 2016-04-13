@@ -26,6 +26,8 @@ struct ihndlr
 
     int req_cnt;
 
+    int irq_num;
+
     int is_processed;
 };
 
@@ -72,6 +74,8 @@ void arch_register_interrupt_handler ( unsigned int inum, void *handler,
 
         ih->is_processed = 0;
 
+        ih->irq_num = inum;
+
 		list_append ( &ihandlers[inum], ih, &ih->list );
 	}
 	else {
@@ -100,26 +104,29 @@ void arch_unregister_interrupt_handler ( unsigned int irq_num, void *handler )
 	}
 }
 
-static struct ihndlr *find_prio_handler ( unsigned int irq_num ) {
-    struct ihndlr *ih = list_get ( &ihandlers[irq_num], FIRST );
+static struct ihndlr *find_prio_handler_advanced () {
+    struct ihndlr *ih;
     struct ihndlr *max_prio_ih = NULL;
-    int max_prio = -1;
+    int max_prio = -1, i;
 
-    while ( ih ) {
-        if ( ih->priority > max_prio && ih->req_cnt > 0) {
-            max_prio_ih = ih;
-            max_prio = ih -> priority;
+    for ( i = 0; i < INTERRUPTS; i++ ) {
+        ih = list_get ( &ihandlers[i], FIRST );
+        while ( ih ) {
+            if ( ih->priority > max_prio && ih->req_cnt > 0 ) {
+                max_prio_ih = ih;
+                max_prio = ih->priority;
+            }
+        //    printf("max_prio_ih: irqn=%d prio=%d req_cnt=%d\n", irq_num, ih->priority, ih->req_cnt);
+            ih = list_get_next( &ih->list );
         }
-        printf("max_prio_ih: irqn=%d prio=%d req_cnt=%d\n", irq_num, ih->priority, ih->req_cnt);
-        ih = list_get_next( &ih->list );
     }
     return max_prio_ih;
 }
-
 /*!
  * "Forward" interrupt handling to registered handler
  * (called from interrupts.S)
  */
+
 void arch_interrupt_handler ( int irq_num )
 {
 	struct ihndlr *ih;
@@ -135,56 +142,35 @@ void arch_interrupt_handler ( int irq_num )
 		if ( icdev->at_exit )
 			icdev->at_exit ( irq_num );
 
+        // register request for every function on interrupt line
         while ( ih ) {
             ih->req_cnt++;
             printf("Primljen zahtjev za prekid: irqn=%d prio=%d req_cnt=%d\n", irq_num, ih->priority, ih->req_cnt);
             ih = list_get_next ( &ih->list );
         }
 
-        while ( (max_prio_ih = find_prio_handler ( irq_num )) ) {
+        // find list with prio handler
+        // implement here
+        // should implement here but it is redundant
+        // implement finding prio handler in one function
+
+
+        // finds prio handler in list
+        while ( (max_prio_ih = find_prio_handler_advanced ()) ) {
             ih = max_prio_ih;
 
             if ( max_prio_ih->is_processed ) {
+                printf("Prioritetniji prekid se izvodi!\r\n");
                 return;
             } else {
                 max_prio_ih->is_processed = 1;
-                max_prio_ih->ihandler ( irq_num );
+                printf("Krece obrada prekida: prio=%d req_cnt=%d\n", ih->priority, ih->req_cnt);
+                max_prio_ih->ihandler ( max_prio_ih->irq_num );
                 max_prio_ih->req_cnt--;
                 max_prio_ih->is_processed = 0;
+
             }
         }
-
-        // max_prio_ih = ih = list_get (&ihandlers[irq_num], FIRST);
-        //
-		// while ( max_prio_ih ) {
-        //     max_prio_ih = NULL;
-    	// 	while ( ih )
-    	// 	{
-        //         if ( ih->priority > max_prio && ih->req_cnt != 0 ) {
-        //             max_prio_ih = ih;
-        //             max_prio = ih->priority;
-        //         }
-        //         //printf("Max_prio_ih: %d Current_ih: %d\r\n", max_prio_ih, ih->priority );
-    	// 		//ih->ihandler ( irq_num );
-    	// 		ih = list_get_next ( &ih->list );
-        //         //printf("Max_prio_ih: %d Current_ih: %d\r\n", max_prio_ih, max_prio_ih->priority );
-        //
-    	// 	}
-        //     if ( !max_prio_ih ) {
-        //         break;
-        //     }
-        //     if ( max_prio_ih->is_processed ) {
-        //         return;
-        //     } else {
-        //         max_prio_ih->is_processed = 1;
-        //         max_prio_ih->ihandler( irq_num );
-        //         max_prio_ih->req_cnt--;
-        //         max_prio_ih->is_processed = 0;
-        //     }
-        //     max_prio = 0;
-        //     max_prio_ih = ih = list_get (&ihandlers[irq_num], FIRST);
-        // }
-
 	}
 
 	else if ( irq_num < INTERRUPTS )
