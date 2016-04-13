@@ -145,7 +145,7 @@ void arch_interrupt_handler ( int irq_num )
         // register request for every function on interrupt line
         while ( ih ) {
             ih->req_cnt++;
-            printf("Primljen zahtjev za prekid: irqn=%d prio=%d req_cnt=%d\n", irq_num, ih->priority, ih->req_cnt);
+            //printf("Primljen zahtjev za prekid: irqn=%d prio=%d req_cnt=%d\n", irq_num, ih->priority, ih->req_cnt);
             ih = list_get_next ( &ih->list );
         }
 
@@ -160,11 +160,11 @@ void arch_interrupt_handler ( int irq_num )
             ih = max_prio_ih;
 
             if ( max_prio_ih->is_processed ) {
-                printf("Prioritetniji prekid se izvodi!\r\n");
+                //printf("Prioritetniji prekid se izvodi!\r\n");
                 return;
             } else {
                 max_prio_ih->is_processed = 1;
-                printf("Krece obrada prekida: prio=%d req_cnt=%d\n", ih->priority, ih->req_cnt);
+                //printf("Krece obrada prekida: prio=%d req_cnt=%d\n", ih->priority, ih->req_cnt);
                 max_prio_ih->ihandler ( max_prio_ih->irq_num );
                 max_prio_ih->req_cnt--;
                 max_prio_ih->is_processed = 0;
