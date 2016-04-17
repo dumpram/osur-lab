@@ -3,6 +3,10 @@
 #define _BF_SIMPLE_C_
 #include <lib/bf_simple.h>
 
+#include <api/stdio.h>
+#include <arch/processor.h>
+#include <kernel/kprint.h>
+
 #ifndef ASSERT
 #include ASSERT_H
 #endif
@@ -60,7 +64,9 @@ void *bfs_init ( void *mem_segm, size_t size )
  */
 void *bfs_alloc ( bfs_mpool_t *mpool, size_t size )
 {
-	bfs_hdr_t *iter, *chunk;
+	bfs_hdr_t *iter, *chunk, *min_chunk;
+
+    size_t min_size = -1;
 
 	ASSERT ( mpool );
 
@@ -72,8 +78,21 @@ void *bfs_alloc ( bfs_mpool_t *mpool, size_t size )
 	ALIGN_FW ( size );
 
 	iter = mpool->first;
-	while ( iter != NULL && iter->size < size )
-		iter = iter->next;
+
+    // modify second condition and find chunk with minimum size
+    // thats just one way of doing it
+	while ( iter != NULL ) {
+        if ( iter->size >= size && min_size == -1 ) {
+            min_size = iter->size;
+            min_chunk = iter;
+        }
+        if ( iter->size >= size && iter->size < min_size) {
+            min_size = iter->size;
+            min_chunk = iter;
+        }
+        iter = iter->next;
+    }
+    iter = min_chunk;
 
 	if ( iter == NULL )
 		return NULL; /* no adequate free chunk found */
