@@ -81,11 +81,16 @@ void *bfs_alloc ( bfs_mpool_t *mpool, size_t size )
 
     // modify second condition and find chunk with minimum size
     // thats just one way of doing it
+    // if ( iter != NULL ) {
+    //     min_size = iter->size;
+    //     min_chunk = iter;
+    // }
+
 	while ( iter != NULL ) {
-        if ( iter->size >= size && min_size == -1 ) {
-            min_size = iter->size;
-            min_chunk = iter;
-        }
+        // if ( iter->size >= size && min_size == -1 ) {
+        //     min_size = iter->size;
+        //     min_chunk = iter;
+        // }
         if ( iter->size >= size && iter->size < min_size) {
             min_size = iter->size;
             min_chunk = iter;
