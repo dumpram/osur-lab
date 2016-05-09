@@ -64,7 +64,7 @@ void *bfs_init ( void *mem_segm, size_t size )
  */
 void *bfs_alloc ( bfs_mpool_t *mpool, size_t size )
 {
-	bfs_hdr_t *iter, *chunk, *min_chunk;
+	bfs_hdr_t *iter, *chunk, *min_chunk = NULL;
 
     size_t min_size = -1;
 
@@ -91,7 +91,7 @@ void *bfs_alloc ( bfs_mpool_t *mpool, size_t size )
         //     min_size = iter->size;
         //     min_chunk = iter;
         // }
-        if ( iter->size >= size && iter->size < min_size) {
+        if ( (iter->size >= size) && (iter->size < min_size)) {
             min_size = iter->size;
             min_chunk = iter;
         }

@@ -8,7 +8,7 @@
 
 #define DUMMY_PRIO 2
 
-#define TEST	2
+#define TEST	1
 
 /*
  * Dio koda test rada LAB-3 a) i b); za ubaciti u:

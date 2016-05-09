@@ -139,8 +139,8 @@ void arch_interrupt_handler ( int irq_num )
 	{
 		/* enable interrupts on PIC immediately since program may not
 		 * return here immediately */
-		if ( icdev->at_exit )
-			icdev->at_exit ( irq_num );
+		// if ( icdev->at_exit )
+		// 	icdev->at_exit ( irq_num );
 
         // register request for every function on interrupt line
         while ( ih ) {
