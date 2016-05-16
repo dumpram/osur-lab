@@ -1,7 +1,11 @@
 #include <arch/device.h>
 #include <kernel/memory.h>
 #include <kernel/pipe.h>
+#include <kernel/device.h>
+#include "device.h"
 #include <lib/queue.h>
+#include <lib/string.h>
+#include <kernel/errno.h>
 
 #define INIT_SIZE 16
 
@@ -69,7 +73,27 @@ device_t pipe = {
     /* SENTINEL */
 };
 
+int k_create_pipe ( char *name ) {
+    // add pipe to list of devices
+    // initialize everything
+    kdevice_t *kdev;
+    device_t *pipe_new = malloc(sizeof(device_t));
+    *pipe_new = pipe;
+
+    memcpy (pipe_new->dev_name, name, strlen(name));
+    kdev = k_device_add ( pipe_new );
+    k_device_init ( kdev, 0, NULL, NULL );
+
+    return 0;
+}
+
 int __sys_create_pipe ( char *name ) {
-    
+
+    SYS_ENTRY();
+
+    k_create_pipe ( name );
+
+    SYS_EXIT( EXIT_SUCCESS, EXIT_SUCCESS );
+
     return 0;
 }
