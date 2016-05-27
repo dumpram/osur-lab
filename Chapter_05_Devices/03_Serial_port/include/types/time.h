@@ -22,8 +22,10 @@ itimerspec_t;
 typedef uint clockid_t;
 /* Used for clock ID type in the clock and timer functions */
 
-#define CLOCK_REALTIME	1
-#define CLOCK_MONOTONIC	2
+#define CLOCK_REALTIME	0
+#define CLOCK_MONOTONIC	1
+
+#define CLOCKS 2
 
 typedef descriptor_t timer_t;
 

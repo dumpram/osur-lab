@@ -17,7 +17,7 @@ static int ktimer_cmp ( void *_a, void *_b );
 static void ktimer_schedule ();
 
 /*! List of active timers */
-static list_t ktimers;
+static list_t ktimers[CLOCKS];
 
 static timespec_t threshold;
 
@@ -32,7 +32,8 @@ int k_time_init ()
 	arch_timer_init ();
 
 	/* timer list is empty */
-	list_init ( &ktimers );
+	list_init ( &ktimers[CLOCK_REALTIME] );
+    list_init ( &ktimers[CLOCK_MONOTONIC] );
 
 	arch_get_min_interval ( &threshold );
 	threshold.tv_nsec /= 2;
@@ -56,7 +57,7 @@ int kclock_gettime ( clockid_t clockid, timespec_t *time )
 {
 	ASSERT(time && (clockid==CLOCK_REALTIME || clockid==CLOCK_MONOTONIC));
 
-	arch_get_time ( time );
+	arch_get_time ( time, clockid );
 
 	return EXIT_SUCCESS;
 }
@@ -193,7 +194,7 @@ int ktimer_delete ( ktimer_t *ktimer )
 	/* remove from active timers (if it was there) */
 	if ( TIMER_IS_ARMED ( ktimer ) )
 	{
-		list_remove ( &ktimers, 0, &ktimer->list );
+		list_remove ( &ktimers[CLOCK_REALTIME], 0, &ktimer->list );
 		ktimer_schedule ();
 	}
 
@@ -233,7 +234,7 @@ int ktimer_settime ( ktimer_t *ktimer, int flags, itimerspec_t *value,
 	if ( TIMER_IS_ARMED ( ktimer ) )
 	{
 		TIMER_DISARM ( ktimer );
-		list_remove ( &ktimers, 0, &ktimer->list );
+		list_remove ( &ktimers[ktimer->clockid], 0, &ktimer->list );
 	}
 
 	if ( value && TIME_IS_SET ( &value->it_value ) )
@@ -243,7 +244,7 @@ int ktimer_settime ( ktimer_t *ktimer, int flags, itimerspec_t *value,
 		if ( !(flags & TIMER_ABSTIME) ) /* convert to absolute time */
 			time_add ( &ktimer->itimer.it_value, &now );
 
-		list_sort_add ( &ktimers, ktimer, &ktimer->list, ktimer_cmp );
+		list_sort_add ( &ktimers[ktimer->clockid], ktimer, &ktimer->list, ktimer_cmp );
 	}
 
 	ktimer_schedule ();
@@ -277,79 +278,102 @@ int ktimer_gettime ( ktimer_t *ktimer, itimerspec_t *value )
 static void ktimer_schedule ()
 {
 	ktimer_t *first, *next;
-	timespec_t time, ref_time;
+	timespec_t time, ref_time, min_time;
+    itimerspec_t ktime[CLOCKS];
+    int min_set = 0;
+    clockid_t clockid;
 
 	if ( !sys__feature ( FEATURE_TIMERS, FEATURE_GET, 0 ) )
 		return;
 
-	kclock_gettime ( CLOCK_REALTIME, &time );
-	/* should have separate "scheduler" for each clock */
+    for ( clockid = 0; clockid < CLOCKS; clockid++ ) {
 
-	ref_time = time;
-	time_add ( &ref_time, &threshold );
-	/* use "ref_time" instead of "time" when looking timers to activate */
+    	kclock_gettime ( clockid, &time );
+    	/* should have separate "scheduler" for each clock */
 
-	/* should any timer be activated? */
-	first = list_get ( &ktimers, FIRST );
-	while ( first != NULL )
-	{
-		/* timers have absolute values in 'it_value' */
-		if ( time_cmp ( &first->itimer.it_value, &ref_time ) <= 0 )
-		{
-			/* 'activate' timer */
+    	ref_time = time;
+    	time_add ( &ref_time, &threshold );
+    	/* use "ref_time" instead of "time" when looking timers to activate */
 
-			/* but first remove timer from list */
-			first = list_remove ( &ktimers, FIRST, NULL );
+    	/* should any timer be activated? */
+    	first = list_get ( &ktimers[clockid], FIRST );
+    	while ( first != NULL )
+    	{
+    		/* timers have absolute values in 'it_value' */
+    		if ( time_cmp ( &first->itimer.it_value, &ref_time ) <= 0 )
+    		{
+    			/* 'activate' timer */
 
-			/* and add to list if period is given */
-			if ( TIME_IS_SET ( &first->itimer.it_interval) )
-			{
-				/* calculate next activation time */
-				time_add ( &first->itimer.it_value,
-					   &first->itimer.it_interval );
-				/* put back into list */
-				list_sort_add ( &ktimers, first,
-						&first->list, ktimer_cmp );
-			}
-			else {
-				TIMER_DISARM ( first );
-			}
+    			/* but first remove timer from list */
+    			first = list_remove ( &ktimers[clockid], FIRST, NULL );
 
-			/* potential problem: if more timers activate at same
-			 * time, first that activate might cause other timers to
-			 * wait very LONG: in handler of that alarm we can
-			 * enable interrupts and busy wait for some time to pass
-			 * fix: set alarm right here for next timer in list
-			 */
-			next = list_get ( &ktimers, FIRST );
-			if ( next != NULL )
-			{
-				ref_time = next->itimer.it_value;
-				time_sub ( &ref_time, &time );
-				arch_timer_set ( &ref_time, ktimer_schedule );
-			}
-			/* evade this behaviour! */
+    			/* and add to list if period is given */
+    			if ( TIME_IS_SET ( &first->itimer.it_interval) )
+    			{
+    				/* calculate next activation time */
+    				time_add ( &first->itimer.it_value,
+    					   &first->itimer.it_interval );
+    				/* put back into list */
+    				list_sort_add ( &ktimers[clockid], first,
+    						&first->list, ktimer_cmp );
+    			}
+    			else {
+    				TIMER_DISARM ( first );
+    			}
 
-			ktimer_process_event ( &first->evp );
+    			/* potential problem: if more timers activate at same
+    			 * time, first that activate might cause other timers to
+    			 * wait very LONG: in handler of that alarm we can
+    			 * enable interrupts and busy wait for some time to pass
+    			 * fix: set alarm right here for next timer in list
+    			 */
+    			next = list_get ( &ktimers[clockid], FIRST );
+    			if ( next != NULL )
+    			{
+    				ref_time = next->itimer.it_value;
+    				time_sub ( &ref_time, &time );
+    				arch_timer_set ( &ref_time, ktimer_schedule );
+    			}
+    			/* evade this behaviour! */
 
-			/* processing may take some time! refresh "time" */
-			kclock_gettime ( CLOCK_REALTIME, &time );
-			ref_time = time;
-			time_add ( &ref_time, &threshold );
+    			ktimer_process_event ( &first->evp );
 
-			first = list_get ( &ktimers, FIRST );
-		}
-		else {
-			first = list_get ( &ktimers, FIRST );
-			if ( first )
-			{
-				ref_time = first->itimer.it_value;
-				time_sub ( &ref_time, &time );
-				arch_timer_set ( &ref_time, ktimer_schedule );
-			}
-			break;
-		}
-	}
+    			/* processing may take some time! refresh "time" */
+    			kclock_gettime ( clockid, &time );
+    			ref_time = time;
+    			time_add ( &ref_time, &threshold );
+
+    			first = list_get ( &ktimers[clockid], FIRST );
+    		} else {
+                break;
+            }
+    		// else { // programiranje alarma
+    		// 	first = list_get ( &ktimers[CLOCK_REALTIME], FIRST );
+    		// 	if ( first )
+    		// 	{
+    		// 		ref_time = first->itimer.it_value;
+    		// 		time_sub ( &ref_time, &time );
+    		// 		arch_timer_set ( &ref_time, ktimer_schedule );
+    		// 	}
+    		// 	break;
+    		// }
+        }
+    }
+
+    for ( clockid = 0; clockid < CLOCKS; clockid++ ) {
+        first = list_get ( &ktimers[clockid], FIRST );
+        if (first == NULL) {
+            continue;
+        }
+        ktimer_gettime ( first, &ktime[clockid]);
+        if ( !min_set ) {
+            min_time = ktime[clockid].it_value;
+            min_set = 1;
+        } else if ( time_cmp ( &(ktime[clockid].it_value), &min_time ) <= 0 ) {
+            min_time = ktime[clockid].it_value;
+        }
+    }
+    arch_timer_set ( &min_time, ktimer_schedule );
 }
 
 /*! Process event defined with sigevent_t */
