@@ -2,6 +2,7 @@
 #pragma once
 
 #include <types/io.h>
+#include <api/pipe.h>
 
 int open ( char *pathname, int flags, mode_t mode );
 int close ( int fd );

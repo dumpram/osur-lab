@@ -6,8 +6,9 @@
 #include <lib/queue.h>
 #include <lib/string.h>
 #include <kernel/errno.h>
+#include <kernel/kprint.h>
 
-#define INIT_SIZE 16
+#define INIT_SIZE 0
 
 typedef struct _pipe_params_t pipe_params_t;
 
@@ -19,7 +20,7 @@ static int pipe_init ( uint flags, void *params, device_t *dev ) {
     pipe_params_t *pipe_params;
     pipe_params = (pipe_params_t *)kmalloc(sizeof(pipe_params_t));
     pipe_params->pipe = queue_init (INIT_SIZE);
-    dev->params = params;
+    dev->params = pipe_params;
     return 0;
 }
 
@@ -35,11 +36,14 @@ static int pipe_send ( void *data, size_t size, uint flags, device_t *dev) {
     queue_t *q = (queue_t *)pipe_params->pipe;
     while ( size-- ) {
         if ( queue_isfull (q) ) {
-            q = queue_resize (q, 2 * q->size);
+            //kprintf("QUEUE IS FULL (rear = %d, front = %d)\n", q->rear, q->front);
+            q = queue_resize (q, q->size + size + 1);
+            ((pipe_params_t *)dev->params)->pipe = q;
             //check success of malloc
-        } else {
-            queue_enqueue (q, *(c_data++));
-        }
+        }// else {
+        //     queue_enqueue (q, *(c_data++));
+        // }
+        queue_enqueue (q, *(c_data++));
     }
     return 0;
 }
@@ -68,7 +72,8 @@ device_t pipe = {
     .destroy = pipe_destroy,
     .send = pipe_send,
     .recv = pipe_recv,
-    .status = pipe_status
+    .status = pipe_status,
+    .irq_handler = NULL
 
     /* SENTINEL */
 };
@@ -87,6 +92,17 @@ int k_create_pipe ( char *name ) {
     return 0;
 }
 
+int k_delete_pipe ( char *name ) {
+
+    //kdevice_t *kdev;
+
+
+    return 0;
+
+
+}
+
+
 int __sys_create_pipe ( char *name ) {
 
     SYS_ENTRY();
@@ -96,4 +112,16 @@ int __sys_create_pipe ( char *name ) {
     SYS_EXIT( EXIT_SUCCESS, EXIT_SUCCESS );
 
     return 0;
+}
+
+int __sys_delete_pipe ( char *name ) {
+
+    SYS_ENTRY();
+
+    k_delete_pipe ( name );
+
+    SYS_EXIT( EXIT_SUCCESS, EXIT_SUCCESS );
+
+    return 0;
+
 }

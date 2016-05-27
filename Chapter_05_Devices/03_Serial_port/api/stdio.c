@@ -6,6 +6,7 @@
 #include <api/errno.h>
 #include <lib/string.h>
 
+
 int _errno;	/* Error number that represent last syscall error */
 
 static descriptor_t std_desc[MAX_USER_DESCRIPTORS];
@@ -168,4 +169,8 @@ int poll ( struct pollfd fds[], nfds_t nfds, int timeout )
 	}
 
 	return sys__poll ( fds, nfds, timeout, std_desc );
+}
+
+int create_pipe ( char *name ) {
+    return __sys_create_pipe ( name );
 }

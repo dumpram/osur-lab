@@ -332,9 +332,11 @@ static int read_write ( descriptor_t *desc, void *buffer, size_t size, int op )
 		retval = k_device_send ( buffer, size, kobj->flags, kdev );
 
 	if ( retval >= 0 )
-		SYS_EXIT ( EXIT_SUCCESS, retval );
+        SYS_EXIT ( EXIT_SUCCESS, retval );
 	else
 		SYS_EXIT ( -retval, EXIT_FAILURE );
+
+    printf("Izlaz write...\n");
 }
 
 int sys__device_status ( descriptor_t *desc, int flags )
