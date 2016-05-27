@@ -2,7 +2,8 @@
 #define _K_PIPE_H
 
 
-int __sys_create_pipe (char *name);
+int sys__create_pipe (char *name);
+int sys__delete_pipe (char *name);
 
 
 

@@ -7,6 +7,7 @@
 #include <lib/string.h>
 #include <kernel/errno.h>
 #include <kernel/kprint.h>
+#include "device.h"
 
 #define INIT_SIZE 0
 
@@ -87,41 +88,34 @@ int k_create_pipe ( char *name ) {
 
     memcpy (pipe_new->dev_name, name, strlen(name));
     kdev = k_device_add ( pipe_new );
+
+    if (kdev == NULL) {
+        return -1;
+    }
     k_device_init ( kdev, 0, NULL, NULL );
-
     return 0;
 }
 
-int k_delete_pipe ( char *name ) {
-
-    //kdevice_t *kdev;
 
 
-    return 0;
-
-
-}
-
-
-int __sys_create_pipe ( char *name ) {
+int sys__create_pipe ( char *name ) {
+    int status, errno;
 
     SYS_ENTRY();
 
-    k_create_pipe ( name );
+    status = k_create_pipe ( name );
+    errno = (status == EXIT_FAILURE)? EEXIST : EXIT_SUCCESS;
 
-    SYS_EXIT( EXIT_SUCCESS, EXIT_SUCCESS );
+    SYS_EXIT( errno , status );
 
-    return 0;
 }
 
-int __sys_delete_pipe ( char *name ) {
+int sys__delete_pipe ( char *name ) {
 
     SYS_ENTRY();
 
-    k_delete_pipe ( name );
+    k_device_delete ( name );
 
     SYS_EXIT( EXIT_SUCCESS, EXIT_SUCCESS );
-
-    return 0;
 
 }

@@ -126,6 +126,20 @@ int k_device_remove ( kdevice_t *kdev )
 	return 0;
 }
 
+int k_device_delete ( char *name ) {
+    kdevice_t *kdev;
+
+    kdev = list_get ( &devices, FIRST );
+
+    while (kdev) {
+        if ( !strcmp ( name, kdev->dev.dev_name ) ) {
+            return k_device_remove(kdev);
+        }
+        kdev = list_get_next ( &kdev->list );
+    }
+    return EXIT_FAILURE;
+}
+
 /*! Send data to device */
 int k_device_send ( void *data, size_t size, int flags, kdevice_t *kdev )
 {
@@ -237,6 +251,7 @@ device_t dev_null = (device_t)
 	.flags = 	DEV_TYPE_SHARED,
 	.params = 	NULL,
 };
+
 
 /*! syscall wrappers -------------------------------------------------------- */
 

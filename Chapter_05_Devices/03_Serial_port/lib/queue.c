@@ -2,15 +2,15 @@
 #include <kernel/kprint.h>
 
 queue_t *queue_init ( int size ) {
-        queue_t *q = malloc (sizeof(queue_t));
-        if ( q == NULL ) {
-            return NULL;
-        }
-        q->size = size;
-        q->front = -1;
-        q->rear = -1;
-        q->data = malloc(sizeof(char) * size);
-        return q;
+    queue_t *q = malloc (sizeof(queue_t));
+    if ( q == NULL ) {
+        return NULL;
+    }
+    q->size = size;
+    q->front = -1;
+    q->rear = -1;
+    q->data = malloc(sizeof(char) * size);
+    return q;
 }
 
 void queue_enqueue ( queue_t *q, char ch ) {

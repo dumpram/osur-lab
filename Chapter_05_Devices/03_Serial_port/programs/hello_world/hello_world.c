@@ -44,6 +44,19 @@ int hello_world ()
 	read ( fd2, buf, 15 );
 	printf ( "Read from B (all): %s\n", buf );
 
+    printf ( "Closing pipe A... \n");
+    delete_pipe ("A");
+    printf ( "Closing pipe B... \n");
+    delete_pipe ("B");
+
+    printf ( "Trying to write A again...\n");
+    printf ( "Writing '0123456789' and 'abcdefgh' to pipe A\n" );
+    write ( fd1, "0123456789", 10 );
+    write ( fd1, "abcdefgh", 8 );
+    printf ( "Reading from A again...\n" );
+    read ( fd1, buf, 15 );
+    printf ( "Read from A (all): %s\n", buf );
+
 #if 0	/* test escape sequence */
 	printf ( "\x1b[20;40H" "Hello World at 40, 20!\n" );
 #endif

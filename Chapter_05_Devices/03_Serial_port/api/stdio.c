@@ -172,5 +172,9 @@ int poll ( struct pollfd fds[], nfds_t nfds, int timeout )
 }
 
 int create_pipe ( char *name ) {
-    return __sys_create_pipe ( name );
+    return sys__create_pipe ( name );
+}
+
+int delete_pipe ( char *name ) {
+    return sys__delete_pipe ( name );
 }

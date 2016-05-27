@@ -4,6 +4,7 @@
 #include <kernel/pipe.h>
 
 int create_pipe ( char *name );
+int delete_pipe ( char *name );
 
 
 #endif /* end of include guard: _PIPE_H_ */

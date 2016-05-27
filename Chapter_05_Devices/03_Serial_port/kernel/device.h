@@ -44,6 +44,7 @@ int k_devices_init ();
 kdevice_t *k_device_add ( device_t *kdev );
 int k_device_init ( kdevice_t *kdev, int flags, void *params, void *callback );
 int k_device_remove ( kdevice_t *kdev );
+int k_device_delete ( char *name );
 
 kdevice_t *k_device_open ( char *name, int flags );
 void k_device_close ( kdevice_t *kdev );
