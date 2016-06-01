@@ -62,7 +62,7 @@ void arch_timer_set ( timespec_t *time, void *alarm_func )
 	timer->get_interval_remainder ( &remainder );
 	time_sub ( &last_load, &remainder );
 	time_add ( &clock[CLOCK_REALTIME], &last_load );
-    //time_add ( &clock[CLOCK_MONOTONIC], &last_load );
+    time_add ( &clock[CLOCK_MONOTONIC], &last_load );
 
 	delay = *time;
 	if ( time_cmp ( &delay, &timer->min_interval ) < 0 )
