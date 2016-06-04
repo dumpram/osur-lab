@@ -219,6 +219,27 @@ int pthread_barrier_wait ( pthread_barrier_t *barrier )
 	return sys__barr_wait ( barrier );
 }
 
+/*! Spin lock */
+int pthread_spin_init ( pthread_spinlock_t *lock ) {
+    *lock = 0;
+    return 0;
+}
+
+int pthread_spin_lock ( pthread_spinlock_t *lock ) {
+    asm volatile (  "   mov %0, %%ebx       \n"
+                    "1: mov $1, %%eax       \n"
+                    "   xchg %%eax, (%%ebx) \n"
+                    "   test %%eax, %%eax   \n"
+                    "   jnz 1b              \n"
+                    : "=m" (lock) );
+    return 0;
+}
+
+int pthread_spin_unlock ( pthread_spinlock_t *lock ) {
+    *lock = 0;
+    return 0;
+}
+
 
 
 /*! Message queue */

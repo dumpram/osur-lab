@@ -11,8 +11,7 @@ char PROG_HELP[] = "Thread example (barriers): custom barrier example.";
 
 pthread_barrier_t test_barr;
 
-/* consumer thread */
-void *test_thread ( void *param )
+static void *test_thread ( void *param )
 {
     int thread_id = (int) param;
     int i = thread_id * 10000000;

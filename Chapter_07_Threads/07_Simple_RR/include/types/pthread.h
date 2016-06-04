@@ -68,6 +68,9 @@ typedef descriptor_t pthread_barrier_t;
 /*! pthread_barrierattr_t flag */
 typedef uint pthread_barrierattr_t;
 
+/*! Spin lock */
+typedef volatile unsigned int pthread_spinlock_t;
+
 /*! Message queue */
 typedef descriptor_t mqd_t;
 
