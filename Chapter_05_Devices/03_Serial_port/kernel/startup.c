@@ -56,9 +56,9 @@ void k_startup ()
 	stdio_init (); /* initialize standard input & output devices */
 
 	/* start desired program(s) */
-	//hello_world ();
+	hello_world ();
 	//keyboard ();
-	timer ();
+//	timer ();
     //q_test ();
 	/* segm_fault (); */
 
