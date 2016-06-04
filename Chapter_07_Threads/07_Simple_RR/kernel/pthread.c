@@ -742,6 +742,124 @@ int sys__sem_post ( sem_t *sem )
 	SYS_EXIT ( kthread_get_errno(NULL), kthread_get_syscall_retval(NULL) );
 }
 
+/*! Barrier --------------------------------------------------------------- */
+
+/*!
+ * Initialize barrier object
+ * \param barr barrier descriptor (user level descriptor)
+ * \param pshared Shall semaphore object be shared between processes
+ * \param value Initial semaphore value
+ * \return 0 if successful, -1 otherwise and appropriate error number is set
+ */
+int sys__barr_init ( pthread_barrier_t *barr,
+    const pthread_barrierattr_t *attr, unsigned count )
+{
+	kbarr_t *kbarr;
+	kobject_t *kobj;
+
+	SYS_ENTRY();
+
+	ASSERT_ERRNO_AND_EXIT ( barr, EINVAL );
+
+	kobj = kmalloc_kobject ( sizeof (kbarr_t) );
+	ASSERT_ERRNO_AND_EXIT ( kobj, ENOMEM );
+	kbarr = kobj->kobject;
+
+	kbarr->id = k_new_id ();
+	kbarr->barr_value = count;
+	kbarr->last_lock = NULL;
+	kbarr->flags = 0;
+	kbarr->ref_cnt = 1;
+	kthreadq_init ( &kbarr->queue );
+
+	//if ( pshared )
+		kbarr->flags |= PTHREAD_PROCESS_SHARED;
+
+	barr->ptr = kobj;
+	barr->id = kbarr->id;
+
+	SYS_EXIT ( EXIT_SUCCESS, EXIT_SUCCESS );
+}
+
+/*!
+ * Destroy barrier object
+ * \param barr barrier descriptor (user level descriptor)
+ * \return 0 if successful, -1 otherwise and appropriate error number is set
+ */
+int sys__barr_destroy ( pthread_barrier_t *barr )
+{
+	kbarr_t *kbarr;
+	kobject_t *kobj;
+
+	SYS_ENTRY();
+
+	ASSERT_ERRNO_AND_EXIT ( barr, EINVAL );
+
+	kobj = barr->ptr;
+	ASSERT_ERRNO_AND_EXIT ( kobj, EINVAL );
+	ASSERT_ERRNO_AND_EXIT ( list_find ( &kobjects, &kobj->list ),
+				EINVAL );
+	kbarr = kobj->kobject;
+	ASSERT_ERRNO_AND_EXIT ( kbarr && kbarr->id == barr->id, EINVAL );
+
+	ASSERT_ERRNO_AND_EXIT (kthreadq_get (&kbarr->queue) == NULL, ENOTEMPTY);
+
+	kbarr->ref_cnt--;
+
+	/* additional cleanup here (e.g. if semaphore is shared leave it) */
+	if ( kbarr->ref_cnt )
+		SYS_EXIT ( EBUSY, EXIT_FAILURE );
+
+	kfree_kobject ( kobj );
+
+	barr->ptr = NULL;
+	barr->id = 0;
+
+	SYS_EXIT ( EXIT_SUCCESS, EXIT_SUCCESS );
+}
+
+/*!
+ * Decrement (lock) semaphore value by 1 (if not 0 when thread is blocked)
+ * \param sem Semaphore descriptor (user level descriptor)
+ * \return 0 if successful, -1 otherwise and appropriate error number is set
+ */
+int sys__barr_wait ( pthread_barrier_t *barr )
+{
+	kbarr_t *kbarr;
+	kobject_t *kobj;
+	kthread_t *kthread;
+
+	SYS_ENTRY();
+
+	ASSERT_ERRNO_AND_EXIT ( barr, EINVAL );
+
+	kthread = kthread_get_active ();
+
+	kobj = barr->ptr;
+	ASSERT_ERRNO_AND_EXIT ( kobj, EINVAL );
+	ASSERT_ERRNO_AND_EXIT ( list_find ( &kobjects, &kobj->list ),
+				EINVAL );
+	kbarr = kobj->kobject;
+	ASSERT_ERRNO_AND_EXIT ( kbarr && kbarr->id == barr->id, EINVAL );
+
+	kthread_set_errno ( kthread, EXIT_SUCCESS );
+	kthread_set_syscall_retval ( kthread, EXIT_SUCCESS );
+
+	if ( kbarr->barr_value > 1 )
+	{
+		kbarr->barr_value--;
+		kbarr->last_lock = kthread;
+        kthread_enqueue ( kthread, &kbarr->queue, 1, NULL, NULL );
+        kthreads_schedule ();
+	}
+	else {
+        kthreadq_release_all ( &kbarr->queue );
+		kthreads_schedule ();
+	}
+
+	SYS_EXIT ( kthread_get_errno(NULL), kthread_get_syscall_retval(NULL) );
+}
+
 /*! Messages ---------------------------------------------------------------- */
 
 /* list of message queues */

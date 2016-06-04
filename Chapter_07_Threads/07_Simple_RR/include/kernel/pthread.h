@@ -30,6 +30,11 @@ int sys__sem_destroy ( sem_t *sem );
 int sys__sem_wait ( sem_t *sem );
 int sys__sem_post ( sem_t *sem );
 
+int sys__barr_init ( pthread_barrier_t *barr,
+    const pthread_barrierattr_t *attr, unsigned count );
+int sys__barr_destroy ( pthread_barrier_t *barr );
+int sys__barr_wait ( pthread_barrier_t *barr );
+
 int sys__mq_open ( char *name, int oflag, mode_t mode, mq_attr_t *attr,
 		   mqd_t *mqdes );
 int sys__mq_close ( mqd_t *mqdes );
