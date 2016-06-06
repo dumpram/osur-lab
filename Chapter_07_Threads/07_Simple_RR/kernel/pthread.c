@@ -773,7 +773,7 @@ int sys__barr_init ( pthread_barrier_t *barr,
 	kthreadq_init ( &kbarr->queue );
 
 	//if ( pshared )
-		kbarr->flags |= PTHREAD_PROCESS_SHARED;
+	//	kbarr->flags |= PTHREAD_PROCESS_SHARED;
 
 	barr->ptr = kobj;
 	barr->id = kbarr->id;
