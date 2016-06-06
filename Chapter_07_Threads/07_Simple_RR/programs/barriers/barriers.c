@@ -5,23 +5,28 @@
 #include <time.h>
 #include <errno.h>
 
+#define NUM_OF_ITER 2
+
 char PROG_HELP[] = "Thread example (barriers): custom barrier example.";
 
 #define BARR_CNT 10
 
 pthread_barrier_t test_barr;
 
+
 static void *test_thread ( void *param )
 {
     int thread_id = (int) param;
-    int i = thread_id * 10000000;
-    while (i--);
+    int i;
+    int iter = NUM_OF_ITER;
 
-
-    printf ("Thread %d reached barrier\n", thread_id);
-    pthread_barrier_wait ( &test_barr );
-    printf ("Thread %d crossed barrier\n", thread_id);
-
+    while (iter--) {
+        i = thread_id * 1000000;
+        while (i--);
+        printf ("Thread %d reached barrier\n", thread_id);
+        pthread_barrier_wait ( &test_barr );
+        printf ("Thread %d crossed barrier\n", thread_id);
+    }
     return NULL;
 }
 

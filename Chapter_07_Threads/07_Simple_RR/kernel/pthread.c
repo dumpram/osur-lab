@@ -747,8 +747,8 @@ int sys__sem_post ( sem_t *sem )
 /*!
  * Initialize barrier object
  * \param barr barrier descriptor (user level descriptor)
- * \param pshared Shall semaphore object be shared between processes
- * \param value Initial semaphore value
+ * \param attr attributes for barrier
+ * \param value barrier value (no of threads)
  * \return 0 if successful, -1 otherwise and appropriate error number is set
  */
 int sys__barr_init ( pthread_barrier_t *barr,
@@ -768,8 +768,8 @@ int sys__barr_init ( pthread_barrier_t *barr,
 	kbarr->id = k_new_id ();
 	kbarr->barr_value = count;
 	kbarr->last_lock = NULL;
-	kbarr->flags = 0;
-	kbarr->ref_cnt = 1;
+	kbarr->flags = *attr;
+	kbarr->ref_cnt = 0;
 	kthreadq_init ( &kbarr->queue );
 
 	//if ( pshared )
@@ -804,11 +804,11 @@ int sys__barr_destroy ( pthread_barrier_t *barr )
 
 	ASSERT_ERRNO_AND_EXIT (kthreadq_get (&kbarr->queue) == NULL, ENOTEMPTY);
 
-	kbarr->ref_cnt--;
-
-	/* additional cleanup here (e.g. if semaphore is shared leave it) */
-	if ( kbarr->ref_cnt )
-		SYS_EXIT ( EBUSY, EXIT_FAILURE );
+	// kbarr->ref_cnt--;
+    //
+	// /* additional cleanup here (e.g. if semaphore is shared leave it) */
+	// if ( kbarr->ref_cnt )
+	// 	SYS_EXIT ( EBUSY, EXIT_FAILURE );
 
 	kfree_kobject ( kobj );
 
@@ -819,8 +819,8 @@ int sys__barr_destroy ( pthread_barrier_t *barr )
 }
 
 /*!
- * Decrement (lock) semaphore value by 1 (if not 0 when thread is blocked)
- * \param sem Semaphore descriptor (user level descriptor)
+ * Decrement (lock) barrier value by 1 (if not 0 when thread is blocked)
+ * \param barr barrier descriptor (user level descriptor)
  * \return 0 if successful, -1 otherwise and appropriate error number is set
  */
 int sys__barr_wait ( pthread_barrier_t *barr )
@@ -845,16 +845,18 @@ int sys__barr_wait ( pthread_barrier_t *barr )
 	kthread_set_errno ( kthread, EXIT_SUCCESS );
 	kthread_set_syscall_retval ( kthread, EXIT_SUCCESS );
 
-	if ( kbarr->barr_value > 1 )
+    kbarr->ref_cnt++;
+
+	if ( kbarr->ref_cnt < kbarr->barr_value )
 	{
-		kbarr->barr_value--;
 		kbarr->last_lock = kthread;
         kthread_enqueue ( kthread, &kbarr->queue, 1, NULL, NULL );
         kthreads_schedule ();
 	}
 	else {
         kthreadq_release_all ( &kbarr->queue );
-		kthreads_schedule ();
+        kbarr->ref_cnt = 0;
+        kthreads_schedule ();
 	}
 
 	SYS_EXIT ( kthread_get_errno(NULL), kthread_get_syscall_retval(NULL) );
