@@ -5,7 +5,7 @@
 #include <time.h>
 #include <errno.h>
 
-char PROG_HELP[] = "Thread example (spinlocks): fibbo spinlock example.";
+char PROG_HELP[] = "Thread example (spinlocks): simple spinlock example.";
 
 #define SPIN_CNT 10
 

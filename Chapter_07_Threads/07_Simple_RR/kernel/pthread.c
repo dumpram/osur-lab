@@ -851,13 +851,12 @@ int sys__barr_wait ( pthread_barrier_t *barr )
 	{
 		kbarr->last_lock = kthread;
         kthread_enqueue ( kthread, &kbarr->queue, 1, NULL, NULL );
-        kthreads_schedule ();
 	}
 	else {
         kthreadq_release_all ( &kbarr->queue );
         kbarr->ref_cnt = 0;
-        kthreads_schedule ();
 	}
+    kthreads_schedule ();
 
 	SYS_EXIT ( kthread_get_errno(NULL), kthread_get_syscall_retval(NULL) );
 }
