@@ -103,6 +103,9 @@ void kthread_set_syscall_retval (kthread_t *kthread, int ret_val);
 /*! display active & ready threads info on console */
 int kthread_info ();
 
+/*! get keys list from thread */
+list_t *kthread_get_keys ( kthread_t *thread );
+
 #ifdef _K_SCHED_
 void kthread_set_active ( kthread_t *kthread );
 void kthread_mark_ready ( kthread_t *kthread );
@@ -206,6 +209,9 @@ struct _kthread_t_
 
 	list_h		    all;
 			    /* list element for list of all threads */
+
+    list_t          keys;
+                /* list of keys for current thread */
 
 	int		    ref_cnt;
 			    /* reference counter */

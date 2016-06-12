@@ -1345,3 +1345,122 @@ static int kmq_receive ( void *p, kthread_t *receiver )
 
 	return msg_len;
 }
+
+int sys__pthread_key_create ( void *p ) {
+    // void   *id;
+    // void   *value;
+    // void  (*destructor) ( void * );
+    //
+    // id =		    *( (void **) p );	p += sizeof (void *);
+    // value = 	    *( (void **) p );	p += sizeof (void *);
+    // destructor = 	*( (void **) p );	p += sizeof (void *);
+    //
+    // if ( id && value && destructor ) {
+    //     return -1;
+    // }
+
+    pthread_key_t *key;
+    kprocess_t *kproc; // current process
+    kprocess_key_t *proc_key;
+
+    key = *( (pthread_key_t **) p );
+
+    ASSERT_ERRNO_AND_EXIT ( key, EINVAL );
+
+
+
+    kprintf ("We are in the syscall for creating key...\n");
+
+    kproc = kthread_get_process (NULL);
+    key = U2K_GET_ADR ( key, kproc );
+
+    kprintf ( "Current process is: %s\n", kproc->name );
+    //kprintf ( "Destructor address from kernel: %x\n", key->destructor );
+    proc_key = list_get ( &kproc->keys, FIRST );
+
+    while ( proc_key ) {
+        ASSERT_ERRNO_AND_EXIT ( proc_key->id != key->id, EINVAL );
+        proc_key = list_get_next ( &proc_key->list );
+    }
+
+    /* create new key */
+    proc_key = kmalloc ( sizeof ( kprocess_key_t) );
+    ASSERT ( proc_key );
+
+    proc_key->id = key->id;
+    proc_key->ref_cnt = 1;
+    proc_key->destructor = key->destructor;
+
+    list_append ( &kproc->keys, proc_key, &proc_key->list );
+
+    //proc_key = list_get ( &kproc->keys, FIRST );
+
+    // while ( proc_key ) {
+    //     //ASSERT_ERRNO_AND_EXIT ( proc_key->id != key->id, EINVAL );
+    //     kprintf ("Ja sam u listi: %x", proc_key->id);
+    //     proc_key = list_get_next ( &proc_key->list );
+    // }
+
+
+    return 0;
+}
+
+int sys__pthread_setspecific ( void *p ) {
+
+    pthread_key_t key;
+    const void *value;
+
+    kprocess_t *kproc; // current process
+    kthread_t *curr_thread; // current thread
+    kprocess_key_t *proc_key;
+    kthread_key_t *thread_key;
+    list_t *thread_keys;
+
+    key = *( (pthread_key_t *) p ); p += sizeof (pthread_key_t);
+    value = *( (void **) p );
+
+    ASSERT ( value );
+
+    kproc = kthread_get_process (NULL);
+
+    /* Go over keys in current process */
+    proc_key = list_get ( &kproc->keys, FIRST );
+
+    while ( proc_key ) {
+        if ( proc_key->id == key.id )
+            break;
+        proc_key = list_get_next ( &proc_key->list );
+    }
+
+    ASSERT_ERRNO_AND_EXIT ( proc_key, EINVAL ); // key doesn't EEXIST
+    proc_key->ref_cnt++;
+
+    kprintf ("Key exists in process list...\n");
+
+    /* Go over keys in current thread */
+    curr_thread = kthread_get_active ();
+    thread_keys = kthread_get_keys ( curr_thread );
+    thread_key = list_get ( thread_keys, FIRST );
+
+    while ( thread_key ) {
+        if ( thread_key->id == key.id )
+            break;
+        thread_key = list_get_next ( &thread_key->list );
+    }
+
+    /* Add to list if doesn't exist */
+    if ( thread_key == NULL ) {
+        kprintf ("Adding key to thread list...\n");
+        thread_key = kmalloc ( sizeof ( kthread_key_t) );
+        ASSERT ( thread_key );
+
+        thread_key->id = key.id;
+        thread_key->destructor = proc_key->destructor;
+
+        list_append ( thread_keys, thread_key, &thread_key->list );
+    }
+    /* Set value */
+    thread_key->value = value;
+
+    return 0;
+}

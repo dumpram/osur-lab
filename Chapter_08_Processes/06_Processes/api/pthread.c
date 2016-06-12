@@ -243,3 +243,27 @@ ssize_t mq_receive (mqd_t mqdes, char *msg_ptr, size_t msg_len, uint *msg_prio)
 	ASSERT_ERRNO_AND_RETURN ( msg_ptr, EINVAL );
 	return syscall ( MQ_RECEIVE, &mqdes, msg_ptr, msg_len, msg_prio );
 }
+
+int   pthread_key_create  ( pthread_key_t *key, void (*destructor)(void*) ) {
+
+    ASSERT_ERRNO_AND_RETURN ( key && destructor, EINVAL );
+
+    key->id = key;
+    key->value = NULL;
+    key->destructor = destructor;
+
+    //printf ("Destructor address: %x", destructor);
+    //destructor (NULL); //destructor is called for sure...
+    //printf ( "Destructor address from user: %x\n", key->destructor );
+
+
+    return syscall ( PTHREAD_KEY_CREATE, key );
+}
+
+int   pthread_setspecific ( pthread_key_t  key, const void *value ) {
+
+    ASSERT_ERRNO_AND_RETURN ( value, EINVAL );
+
+
+    return syscall ( PTHREAD_SETSPECIFIC, key, value );
+}

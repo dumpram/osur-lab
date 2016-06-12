@@ -72,6 +72,9 @@ static int (*k_sysfunc[SYSFUNCS]) ( void *params ) =
 	sys__mq_send,
 	sys__mq_receive,
 
+    sys__pthread_key_create,
+    sys__pthread_setspecific,
+
 	sys__sigaction,
 	sys__pthread_sigmask,
 	sys__sigqueue,

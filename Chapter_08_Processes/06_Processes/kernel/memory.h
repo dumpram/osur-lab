@@ -80,6 +80,8 @@ struct _kprocess_t_
 
 	int	      thread_count;
 
+    list_t      keys;
+
 	list_t	      kobjects;
 		      /* kobject_t elements */
 

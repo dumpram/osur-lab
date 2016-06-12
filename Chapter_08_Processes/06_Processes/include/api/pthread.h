@@ -59,3 +59,9 @@ mqd_t mq_open ( char *name, int oflag, mode_t mode, struct mq_attr *attr );
 int mq_close ( mqd_t mqdes );
 int mq_send ( mqd_t mqdes, char *msg_ptr, size_t msg_len, uint msg_prio );
 ssize_t mq_receive (mqd_t mqdes, char *msg_ptr, size_t msg_len, uint *msg_prio);
+
+/*! Keys */
+int   pthread_key_create  ( pthread_key_t *key, void (*destructor)(void*) );
+int   pthread_key_delete  ( pthread_key_t  key );
+int   pthread_setspecific ( pthread_key_t  key, const void *value );
+void *pthread_getspecific ( pthread_key_t  key );

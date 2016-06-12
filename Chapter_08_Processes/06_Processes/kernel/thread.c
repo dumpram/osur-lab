@@ -138,6 +138,9 @@ kthread_t *kthread_start_process ( char *prog_name, void *param, int prio )
 
 	list_init ( &kproc->kobjects );
 
+    /* Initialize key list */
+    list_init ( &kproc->keys );
+
 	kargs = param;
 	if ( kargs && kargs[0] ) /* have arguments? */
 	{
@@ -945,6 +948,10 @@ int kthread_info ()
 	}
 
 	return 0;
+}
+
+list_t *kthread_get_keys ( kthread_t *thread ) {
+    return &thread->keys;
 }
 
 /*! Idle thread ------------------------------------------------------------- */

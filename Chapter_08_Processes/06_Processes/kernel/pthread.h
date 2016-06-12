@@ -117,5 +117,24 @@ typedef struct _kmq_queue_t_
 }
 kmq_queue_t;
 
+/*! kprocess key structure */
+typedef struct _kprocess_key_t_ {
+	void   *id;
+	list_h  list;
+    void (*destructor) ( void * );
+	uint    ref_cnt;
+}
+kprocess_key_t;
+
+/*! kthread key structure */
+typedef struct _kthread_key_t_ {
+	void   *id;
+	const void   *value;
+	void  (*destructor) ( void * );
+	list_h  list;
+}
+kthread_key_t;
+
+
 
 #endif	/* _K_PTHREAD_C_ */

@@ -79,4 +79,12 @@ typedef struct mq_attr
 }
 mq_attr_t;
 
+/*! Pthread key parameters */
+typedef struct _pthread_key_t_ {
+	void   *id;
+	void   *value;
+	void  (*destructor) ( void * );
+}
+pthread_key_t;
+
 #define MQ_PRIO_MAX	255

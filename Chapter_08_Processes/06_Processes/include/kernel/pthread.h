@@ -32,3 +32,6 @@ int sys__mq_open ( void *p );
 int sys__mq_close ( void *p );
 int sys__mq_send ( void *p );
 int sys__mq_receive ( void *p );
+
+int sys__pthread_key_create ( void *p  );
+int sys__pthread_setspecific ( void *p );
