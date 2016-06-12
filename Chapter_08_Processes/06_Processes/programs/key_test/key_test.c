@@ -47,7 +47,7 @@ void *dretva ( void *x )
 
 	*stat = (int) x;
 	*podaci = *stat * 10;
-
+    printf ( "Value address from program %x \n", stat);
 	//povezi 'stat' s kljucem 'kStatus' u trenutnoj dretvi
 	pthread_setspecific ( kStatus, stat );
 	//povezi 'podaci' s kljucem 'kPodaci' u trenutnoj dretvi
@@ -65,15 +65,15 @@ void *dretva ( void *x )
 //radna dretva – u nekoj funkciji
 void funkcija ()
 {
-	// Status *s;
+	Status *s;
 	// Podaci *b;
     //
 	// //dohvati podatke povezane uz kljuceve
-	// s = pthread_getspecific ( kStatus );
+	s = pthread_getspecific ( kStatus );
 	// b = pthread_getspecific ( kPodaci );
     //
 	// //koristi ‘s’ i ‘b’
-	// printf ( "stat=%d, podaci=%d\n", *s, *b );
+	printf ( "stat=%d", *s);
 
     //printf ("Poziv funkcije!\r\n");
 }

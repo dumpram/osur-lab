@@ -74,6 +74,7 @@ static int (*k_sysfunc[SYSFUNCS]) ( void *params ) =
 
     sys__pthread_key_create,
     sys__pthread_setspecific,
+    sys__pthread_getspecific,
 
 	sys__sigaction,
 	sys__pthread_sigmask,

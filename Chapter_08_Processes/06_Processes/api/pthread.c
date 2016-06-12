@@ -267,3 +267,15 @@ int   pthread_setspecific ( pthread_key_t  key, const void *value ) {
 
     return syscall ( PTHREAD_SETSPECIFIC, key, value );
 }
+
+void *pthread_getspecific ( pthread_key_t  key ) {
+    int sys_result;
+    void *value = NULL;
+    printf ( "Adress of value pointer from api: %x\n ", &value);
+    sys_result = syscall ( PTHREAD_GETSPECIFIC, key, &value );
+    printf ( "Value address from api (getspecific) %x \n", value);
+    if (!sys_result) {
+        return value;
+    }
+    return NULL;
+}

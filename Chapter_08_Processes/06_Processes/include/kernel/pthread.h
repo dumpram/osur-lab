@@ -35,3 +35,4 @@ int sys__mq_receive ( void *p );
 
 int sys__pthread_key_create ( void *p  );
 int sys__pthread_setspecific ( void *p );
+int sys__pthread_getspecific ( void *p );
