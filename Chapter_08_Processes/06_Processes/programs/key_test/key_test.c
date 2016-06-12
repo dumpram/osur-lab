@@ -19,18 +19,21 @@ void oslobodi(void *x);
 int key_test ()
 {
 	pthread_t t1; //opisnici za nove dretve
-    //pthread_t t2;
+    pthread_t t2;
 
     //inicijalizacija kljuceva, potrebno za privatne podatke dretve
 	pthread_key_create ( &kStatus, oslobodi );
-	//pthread_key_create ( &kStatus, oslobodi );
+	pthread_key_create ( &kPodaci, oslobodi );
 	//inicijalno, NULL vrijednost je povezana uz kljuceve za sve dretve
 
 	pthread_create ( &t1, NULL, dretva, (void *) 1 );
-//	pthread_create ( &t2, NULL, dretva, (void *) 2 );
+	pthread_create ( &t2, NULL, dretva, (void *) 2 );
 
 	pthread_join ( t1, NULL );
-//	pthread_join ( t2, NULL );
+	pthread_join ( t2, NULL );
+
+
+    //pthread_key_delete ( kPodaci );
 
 	return 0;
 }
@@ -51,13 +54,16 @@ void *dretva ( void *x )
 	//povezi 'stat' s kljucem 'kStatus' u trenutnoj dretvi
 	pthread_setspecific ( kStatus, stat );
 	//povezi 'podaci' s kljucem 'kPodaci' u trenutnoj dretvi
-//	pthread_setspecific ( kPodaci, podaci );
+	pthread_setspecific ( kPodaci, podaci );
 
 	sleep.tv_sec = 1;
 	sleep.tv_nsec = 0;
 	nanosleep ( &sleep, NULL );
 
 	funkcija();
+
+    //pthread_key_delete ( kStatus );
+    //pthread_key_delete ( kPodaci );
 
 	return NULL;
 }
@@ -66,23 +72,21 @@ void *dretva ( void *x )
 void funkcija ()
 {
 	Status *s;
-	// Podaci *b;
+	Podaci *b;
     //
 	// //dohvati podatke povezane uz kljuceve
 	s = pthread_getspecific ( kStatus );
-	// b = pthread_getspecific ( kPodaci );
+	b = pthread_getspecific ( kPodaci );
     //
 	// //koristi ‘s’ i ‘b’
-	printf ( "stat=%d", *s);
+    printf ( "stat=%d, podaci=%d\n", *s, *b );
 
     //printf ("Poziv funkcije!\r\n");
 }
 
 void oslobodi ( void *x )
 {
-	//printf("Oslobadjanje %p\n", x);
-	// if (x)
-	// 	free(x);
-
-    //printf ("Poziv destruktora...!\r\n");
+	printf("Oslobadjanje %x\n", x);
+	if (x)
+		free(x);
 }

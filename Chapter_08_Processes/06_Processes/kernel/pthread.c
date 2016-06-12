@@ -1388,7 +1388,7 @@ int sys__pthread_key_create ( void *p ) {
     ASSERT ( proc_key );
 
     proc_key->id = key->id;
-    proc_key->ref_cnt = 1;
+    proc_key->ref_cnt = 0;
     proc_key->destructor = key->destructor;
 
     list_append ( &kproc->keys, proc_key, &proc_key->list );
@@ -1467,7 +1467,7 @@ int sys__pthread_setspecific ( void *p ) {
 }
 
 int sys__pthread_getspecific ( void *p ) {
-    pthread_key_t key;
+    pthread_key_t *key;
     const void **value;
     kprocess_t *kproc; // current process
     kthread_t *curr_thread; // current thread
@@ -1475,15 +1475,61 @@ int sys__pthread_getspecific ( void *p ) {
     kthread_key_t *thread_key;
     list_t *thread_keys;
 
-    key = *( (pthread_key_t *) p ); p += sizeof (pthread_key_t);
+    key = *( (pthread_key_t **) p ); p += sizeof (pthread_key_t *);
     value = *( (void **) p );
-    kprintf ( "Adress of value pointer from kernel: %x\n ", value);
+    kprintf ( "Adress of value pointer from kernel: %x\n", value);
 
 
 
     kproc = kthread_get_process (NULL);
+    key = U2K_GET_ADR ( key, kproc );
+    value = U2K_GET_ADR ( value, kproc ); // translate process logic address
 
-    value = U2K_GET_ADR (value, kproc);
+    /* Go over keys in current process */
+    if ( key->id != NULL ) {
+        proc_key = list_get ( &kproc->keys, FIRST );
+        while ( proc_key ) {
+            if ( proc_key->id == key->id )
+                break;
+            proc_key = list_get_next ( &proc_key->list );
+        }
+        ASSERT_ERRNO_AND_EXIT ( proc_key, EINVAL ); // key doesn't EEXIST
+    }
+    curr_thread = kthread_get_active ();
+    thread_keys = kthread_get_keys ( curr_thread );
+    thread_key = list_get ( thread_keys, FIRST );
+    if ( key->id != NULL ) {
+        while ( thread_key ) {
+            if ( thread_key->id == key->id )
+                break;
+            thread_key = list_get_next ( &thread_key->list );
+        }
+    }
+
+    /* Key doesn't exist in  list */
+    if ( thread_key == NULL ) {
+        *value = NULL;
+    } else {
+        kprintf ( "Value address from kernel (getspecific) %x \n", thread_key->value);
+        *value = thread_key->value;
+        key->id = thread_key->id;
+        key->destructor = thread_key->destructor;
+        key->value = (void *)thread_key->value;
+    }
+    return 0;
+}
+
+int sys__pthread_key_delete ( void *p ) {
+    pthread_key_t key;
+    kprocess_t *kproc; // current process
+    kthread_t *curr_thread; // current thread
+    kprocess_key_t *proc_key;
+    kthread_key_t *thread_key;
+    list_t *thread_keys;
+
+    key = *( (pthread_key_t *) p ); p += sizeof (pthread_key_t);
+
+    kproc = kthread_get_process (NULL);
 
     /* Go over keys in current process */
     proc_key = list_get ( &kproc->keys, FIRST );
@@ -1506,12 +1552,13 @@ int sys__pthread_getspecific ( void *p ) {
         thread_key = list_get_next ( &thread_key->list );
     }
 
-    /* Key doesn't exist in  list */
-    if ( thread_key == NULL ) {
-        *value = NULL;
-    } else {
-        kprintf ( "Value address from kernel (getspecific) %x \n", thread_key->value);
-        *value = thread_key->value;
+    if ( thread_key->id != NULL ) {
+        list_remove ( thread_keys, 0, &thread_key->list );
+        proc_key->ref_cnt--;
+        if ( proc_key->ref_cnt == 0 ) {
+            list_remove ( &kproc->keys, 0, &proc_key->list );
+        }
     }
+
     return 0;
 }

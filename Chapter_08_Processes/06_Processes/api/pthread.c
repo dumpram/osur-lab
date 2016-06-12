@@ -19,6 +19,18 @@ int pthread_create ( pthread_t *thread, pthread_attr_t *attr,
 
 void pthread_exit ( void *retval )
 {
+    void *value = NULL;
+    pthread_key_t key;
+    key.id = NULL;
+
+    syscall ( PTHREAD_GETSPECIFIC, &key, &value);
+    //printf ("Key id (exit): %x ", key.id);
+    while (key.id != NULL ) {
+        pthread_key_delete ( key );
+        key.id = NULL;
+        syscall ( PTHREAD_GETSPECIFIC, &key, &value);
+    }
+
 	syscall ( PTHREAD_EXIT, retval );
 }
 
@@ -272,10 +284,22 @@ void *pthread_getspecific ( pthread_key_t  key ) {
     int sys_result;
     void *value = NULL;
     printf ( "Adress of value pointer from api: %x\n ", &value);
-    sys_result = syscall ( PTHREAD_GETSPECIFIC, key, &value );
+    sys_result = syscall ( PTHREAD_GETSPECIFIC, &key, &value );
     printf ( "Value address from api (getspecific) %x \n", value);
     if (!sys_result) {
         return value;
     }
     return NULL;
+}
+
+int   pthread_key_delete  ( pthread_key_t  key ) {
+    void *value = NULL;
+    key.destructor = NULL;
+    syscall ( PTHREAD_GETSPECIFIC, &key, &value );
+    printf ( "Value address from api (keydelete) %x \n", value);
+    if ( key.destructor != NULL ) {
+        key.destructor (value);
+    }
+    syscall ( PTHREAD_KEY_DELETE, key );
+    return 0;
 }
